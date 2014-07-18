@@ -1,6 +1,6 @@
 from __future__ import absolute_import
 
-from invenio.testsuite import InvenioTestCase
+from invenio.testsuite import InvenioTestCase, make_test_suite, run_test_suite
 from invenio.ext.sqlalchemy import db
 
 
@@ -69,3 +69,10 @@ class RemoteTokenTestCase(BaseTestCase):
             t3.remote_account.user_id
         assert RemoteToken.get(4, "dev").remote_account.user_id == \
             t4.remote_account.user_id
+
+
+TEST_SUITE = make_test_suite(RemoteAccountTestCase, RemoteTokenTestCase)
+
+
+if __name__ == "__main__":
+    run_test_suite(TEST_SUITE)

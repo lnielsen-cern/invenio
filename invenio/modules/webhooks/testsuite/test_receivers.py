@@ -21,7 +21,7 @@ from __future__ import absolute_import
 
 import json
 from flask_registry import RegistryError
-from invenio.testsuite import InvenioTestCase
+from invenio.testsuite import InvenioTestCase, make_test_suite, run_test_suite
 
 
 from ..models import Event, Receiver, InvalidPayload, CeleryReceiver, \
@@ -160,3 +160,10 @@ class ReceiverTestCase(InvenioTestCase):
                    ('X-Hub-Signature', get_hmac("somevalue"))]
         with self.app.test_request_context(headers=headers, data=payload):
             self.assertRaises(InvalidSignature, r.consume_event, 2)
+
+
+TEST_SUITE = make_test_suite(ReceiverTestCase)
+
+
+if __name__ == "__main__":
+    run_test_suite(TEST_SUITE)

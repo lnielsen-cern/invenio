@@ -19,6 +19,8 @@
 
 from __future__ import absolute_import
 
+
+from invenio.testsuite import make_test_suite, run_test_suite
 from invenio.ext.sqlalchemy import db
 from invenio.ext.restful.utils import APITestCase
 
@@ -164,3 +166,9 @@ class WebHooksScopesTestCase(APITestCase):
             data=payload,
             code=403,
         )
+
+TEST_SUITE = make_test_suite(WebHooksTestCase, WebHooksScopesTestCase)
+
+
+if __name__ == "__main__":
+    run_test_suite(TEST_SUITE)

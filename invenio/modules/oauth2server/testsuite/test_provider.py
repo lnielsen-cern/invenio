@@ -24,7 +24,8 @@ import logging
 
 from flask import url_for
 
-from invenio.testsuite import FlaskSQLAlchemyTest
+from invenio.testsuite import FlaskSQLAlchemyTest, make_test_suite, \
+    run_test_suite
 from invenio.ext.sqlalchemy import db
 from mock import MagicMock
 from flask_oauthlib.client import prepare_request
@@ -276,7 +277,7 @@ class OAuth2ProviderTestCase(FlaskSQLAlchemyTest):
         self.assertStatus(r, 403)
 
     def test_settings_index(self):
-        # Create a remove account (linked account)
+        # Create a remote account (linked account)
         self.assert401(self.client.get(url_for('oauth2server_settings.index')))
         self.login("tester", "tester")
 
@@ -295,3 +296,10 @@ class OAuth2ProviderTestCase(FlaskSQLAlchemyTest):
             )
         )
         assert res.status_code == 302
+
+
+TEST_SUITE = make_test_suite(OAuth2ProviderTestCase)
+
+
+if __name__ == "__main__":
+    run_test_suite(TEST_SUITE)

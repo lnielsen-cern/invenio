@@ -21,7 +21,7 @@ from __future__ import absolute_import
 
 import httpretty
 from mock import patch
-from invenio.testsuite import InvenioTestCase
+from invenio.testsuite import InvenioTestCase, make_test_suite, run_test_suite
 
 
 class DataCiteTasksTest(InvenioTestCase):
@@ -71,3 +71,10 @@ class DataCiteTasksTest(InvenioTestCase):
 
         pid = PersistentIdentifier.get("doi", "10.1234/invenio.1234")
         assert pid.status == self.app.config['PIDSTORE_STATUS_REGISTERED']
+
+
+TEST_SUITE = make_test_suite(DataCiteTasksTest)
+
+
+if __name__ == "__main__":
+    run_test_suite(TEST_SUITE)
