@@ -34,7 +34,7 @@ from setuptools import setup, find_packages
 
 
 install_requires = [
-    "alembic==0.6.2",
+    "alembic>=0.6.2,<0.7",
     "Babel==1.3",
     "BeautifulSoup==3.2.1",
     "BeautifulSoup4==4.3.2",
@@ -87,10 +87,10 @@ install_requires = [
     "rdflib==2.4.2",
     "redis==2.8.0",  # Is it explicitly required?
     "reportlab==2.5",
-    "requests==1.2.3",
+    "requests>=1.2.3",
     "six>=1.7.2",
     "Sphinx",
-    "SQLAlchemy==0.8.3",
+    "SQLAlchemy>=0.8.3,<0.9",
     "SQLAlchemy-Utils>=0.23.5,<0.24",
     "unidecode",
     "workflow==1.1.0",
