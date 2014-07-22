@@ -19,18 +19,23 @@
 
 from __future__ import absolute_import
 
+
 from flask import current_app
 from flask.ext.login import current_user
+from oauthlib.oauth2.rfc6749.errors import InsecureTransportError, \
+    InvalidRedirectURIError
 from werkzeug.security import gen_salt
 from wtforms import validators
-from wtforms import widgets
 from sqlalchemy_utils import URLType
+import six
+from six.moves.urllib_parse import urlparse
+
 
 from invenio.ext.sqlalchemy import db
 from invenio.ext.login.legacy_user import UserInfo
 
 
-class OAuthUserProxy():
+class OAuthUserProxy(object):
     """
     Proxy object to an Invenio User
     """
@@ -57,6 +62,14 @@ class OAuthUserProxy():
     @classmethod
     def get_current_user(cls):
         return cls(current_user._get_current_object())
+
+
+class Scope(object):
+    def __init__(self, id_, help_text='', group='', internal=False):
+        self.id = id_
+        self.group = group
+        self.help_text = help_text
+        self.is_internal = internal
 
 
 class Client(db.Model):
@@ -125,7 +138,7 @@ class Client(db.Model):
     )
     """ Client application secret """
 
-    is_confidential = db.Column(db.Boolean, default=True)
+    is_confidential = db.Column(db.Boolean, default=False)
     """ Determine if client application is public or not.  """
 
     is_internal = db.Column(db.Boolean, default=False)
@@ -133,12 +146,12 @@ class Client(db.Model):
 
     _redirect_uris = db.Column(db.Text)
     """
-    A comma-separated list of redirect URIs. First URI is the default URI.
+    A newline-separated list of redirect URIs. First URI is the default URI.
     """
 
     _default_scopes = db.Column(db.Text)
     """
-    A comma-separated list of default scopes of the client. The value of the
+    A space-separated list of default scopes of the client. The value of the
     scope parameter is expressed as a list of space-delimited,
     case-sensitive strings.
     """
@@ -166,8 +179,40 @@ class Client(db.Model):
     @property
     def redirect_uris(self):
         if self._redirect_uris:
-            return self._redirect_uris.split()
+            return self._redirect_uris.splitlines()
         return []
+
+    @redirect_uris.setter
+    def redirect_uris(self, value):
+        """ Validate and store redirect URIs for client. """
+        if isinstance(value, six.text_type):
+            value = value.split("\n")
+
+        value = [v.strip() for v in value]
+
+        for v in value:
+            self.validate_redirect_uri(v)
+
+        self._redirect_uris = "\n".join(value) or ""
+
+    @staticmethod
+    def validate_redirect_uri(value):
+        """ Validate a redirect URI.
+
+        A redirect URL must utilize https or redirect to localhost.
+
+        :param value: Value to validate.
+        :raises: InvalidRedirectURIError, InsecureTransportError
+        """
+        sch, netloc, path, par, query, fra = urlparse(value)
+        if not (sch and netloc):
+            raise InvalidRedirectURIError()
+        if sch != 'https':
+            if ':' in netloc:
+                netloc, port = netloc.split(':', 1)
+            if not (netloc in ('localhost', '127.0.0.1') and sch == 'http'):
+                raise InsecureTransportError()
+        return True
 
     @property
     def default_redirect_uri(self):
@@ -178,9 +223,19 @@ class Client(db.Model):
 
     @property
     def default_scopes(self):
+        """ List of default scopes for client. """
         if self._default_scopes:
-            return self._default_scopes.split()
+            return self._default_scopes.split(" ")
         return []
+
+    def validate_scopes(self, scopes):
+        """ Validate if client is allowed to access scopes. """
+        from .registry import scopes as scopes_registry
+
+        for s in set(scopes):
+            if s not in scopes_registry:
+                return False
+        return True
 
     def gen_salt(self):
         self.reset_client_id()
@@ -245,6 +300,18 @@ class Token(db.Model):
         if self._scopes:
             return self._scopes.split()
         return []
+
+    @scopes.setter
+    def scopes(self, scopes):
+        self._scopes = " ".join(scopes) if scopes else ""
+
+    def scopes_ordered(self, scopes):
+        self._scopes = " ".join(scopes) if scopes else ""
+
+    def get_visible_scopes(self):
+        """ Get list of non-internal scopes for token. """
+        from .registry import scopes as scopes_registry
+        return [k for k, s in scopes_registry.choices() if k in self.scopes]
 
     @classmethod
     def create_personal(cls, name, user_id, scopes=None, is_internal=False):

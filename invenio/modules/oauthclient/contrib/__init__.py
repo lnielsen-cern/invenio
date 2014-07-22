@@ -16,21 +16,3 @@
 ## You should have received a copy of the GNU General Public License
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
-
-from flask import Blueprint
-
-blueprint = Blueprint(
-    'webhooks',
-    __name__,
-)
-
-
-@blueprint.before_app_first_request
-def register_scopes():
-    """
-    Register OAuth2 scopes for webhooks module
-    """
-    from invenio.modules.oauth2server.registry import scopes
-    scopes.register('webhooks:read', dict(is_public=False, desc=''))
-    scopes.register('webhooks:write', dict(is_public=False, desc=''))
-    scopes.register('webhooks:event', dict(is_public=False, desc=''))
