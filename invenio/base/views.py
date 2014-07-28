@@ -17,28 +17,9 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-"""Search bundles."""
+"""Define base Blueprint."""
 
-from invenio.ext.assets import Bundle
+from flask import Blueprint
 
-js = Bundle(
-    'js/search/search_parser.js',
-    'js/search/typeahead.js',
-    'js/search/default_typeahead_configuration.js',
-    'js/search/facet.js',
-    'js/search/init.js',
-    filters="uglifyjs",
-    bower={
-        'requirejs-hogan-plugin': 'latest'
-    },
-    output="search.js",
-    weight=50
-)
-
-styles = Bundle(
-    'css/search/search.css',
-    'css/search/searchbar.css',
-    filters="cleancss",
-    output="search.css",
-    weight=60
-)
+blueprint = Blueprint('base', __name__, template_folder='templates',
+                      static_folder='static')

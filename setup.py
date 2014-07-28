@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## This file is part of Invenio.
 ## Copyright (C) 2013, 2014 CERN.
 ##
@@ -31,6 +32,24 @@ import os
 import sys
 
 from setuptools import setup, find_packages
+from setuptools.command.install_lib import install_lib as _install_lib
+from distutils.command.build import build as _build
+
+
+class build(_build):
+
+    """Compile catalog before building the package."""
+
+    sub_commands = [('compile_catalog', None)] + _build.sub_commands
+
+
+class install_lib(_install_lib):
+
+    """Compile catalog before runing installation command."""
+
+    def run(self):
+        self.run_command('compile_catalog')
+        _install_lib.run(self)
 
 
 install_requires = [
@@ -248,5 +267,9 @@ setup(
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
     ],
     test_suite='invenio.testsuite.suite',
-    tests_require=tests_require
+    tests_require=tests_require,
+    cmdclass={
+        'build': build,
+        'install_lib': install_lib,
+    },
 )
