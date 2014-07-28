@@ -30,8 +30,11 @@ class APITestCase(InvenioTestCase):
 
     """API unit test base class."""
 
-    apikey = None
-    accesstoken = dict()
+    def __init__(self, *args, **kwargs):
+        """Set instance variables."""
+        super(APITestCase, self).__init__(*args, **kwargs)
+        self.accesstoken = dict()
+        self.apikey = None
 
     def create_api_key(self, user_id):
         """Create api-key."""
@@ -65,7 +68,8 @@ class APITestCase(InvenioTestCase):
                 t = Token.query.filter_by(access_token=t).first()
                 if t:
                     db.session.delete(t)
-                    db.session.commit()
+        db.session.commit()
+        self.accesstoken = dict()
 
     def remove_api_key(self):
         """Remove api key."""
@@ -134,10 +138,10 @@ class APITestCase(InvenioTestCase):
             request_args = {}
 
         if user_id is None:
-            tokens = self.accesstoken.values()
-            if len(tokens) > 1:
+            users = self.accesstoken.keys()
+            if len(users) > 1:
                 warnings.warn("Please provide a user_id argument.")
-            user_id = tokens[0]
+            user_id = users[0]
 
         if self.apikey:
             urlargs['apikey'] = self.apikey,
