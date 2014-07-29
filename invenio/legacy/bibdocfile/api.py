@@ -1751,7 +1751,7 @@ class BibDoc(object):
         except OSError as e:
             container["extensions"] = []
             current_app.logger.warning("Could not retrieve available formats",
-                                       exc_info=e)
+                                       exc_info=True)
         return container
 
     @staticmethod
