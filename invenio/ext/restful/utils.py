@@ -21,7 +21,6 @@
 
 import json
 import six
-import warnings
 from flask import url_for
 from invenio.testsuite import InvenioTestCase
 
@@ -138,10 +137,9 @@ class APITestCase(InvenioTestCase):
             request_args = {}
 
         if user_id is None:
-            users = self.accesstoken.keys()
-            if len(users) > 1:
-                warnings.warn("Please provide a user_id argument.")
-            user_id = users[0]
+            if len(self.accesstoken) == 1:
+                user_id = self.accesstoken.keys()[0]
+        assert user_id, "Please provide a user_id argument."
 
         if self.apikey:
             urlargs['apikey'] = self.apikey,
