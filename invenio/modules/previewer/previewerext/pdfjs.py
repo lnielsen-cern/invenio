@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 ##
 ## This file is part of Invenio.
-## Copyright (C) 2014 CERN.
+## Copyright (C) 2013, 2014 CERN.
 ##
 ## Invenio is free software; you can redistribute it and/or
 ## modify it under the terms of the GNU General Public License as
@@ -17,29 +17,16 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-"""Annotations bundles."""
-
-from invenio.ext.assets import Bundle
-
-from invenio.modules.previewer.bundles import pdftk as _pdftk
-from invenio.modules.comments.bundles import (js as _commentsjs,
-                                              css as _commentscss)
+from flask import render_template, request
 
 
-_pdftk.contents += ("js/annotations/pdf_notes_helpers.js",)
+def can_preview(f):
+    """Returns True for PDFs, False for others"""
+    if f.superformat == '.pdf':
+        return True
+    return False
 
-_commentsjs.contents += ("js/annotations/notes_popover.js",)
-_commentscss.contents += ("css/annotations/annotations.css",)
 
-js = Bundle(
-    "vendors/plupload/js/moxie.js",
-    "vendors/plupload/js/plupload.dev.js",
-    "js/annotations/annotations.js",
-    "js/annotations/plupload_helper.js",
-    filters="uglifyjs",
-    output="annotations.js",
-    weight=30,
-    bower={
-        "plupload": "latest"
-    }
-)
+def preview(f):
+    return render_template("previewer/pdfjs.html", f=f,
+                           embed=request.args.get('embed', type=bool))

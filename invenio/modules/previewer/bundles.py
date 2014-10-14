@@ -23,15 +23,37 @@ from invenio.ext.assets import Bundle
 
 
 pdfjs = Bundle(
+    "vendors/jquery/dist/jquery.js",
+    "vendors/pdfjs-build/generic/web/compatibility.js",
+    "vendors/pdfjs-build/generic/web/l10n.js",
+    "vendors/pdfjs-build/generic/build/pdf.js",
+    "vendors/pdfjs-build/generic/web/viewer.js",
+    filters="uglifyjs",
+    output="previewer/pdfjs.js",
+    weight=20,
+    bower={
+        "pdfjs-build": "git://github.com/bouzlibop/pdfjs-build"
+    }
+)
+
+pdftk = Bundle(
     "js/previewer/pdf_viewer.js",
     filters="uglifyjs",
-    output="previewer/pdf.js",
+    output="previewer/pdftk.js",
     weight=20
 )
 
-pdfcss = Bundle(
+pdfjscss = Bundle(
+    "css/previewer/pdfjs_shim.css",
+    "vendors/pdfjs-build/generic/web/viewer.css",
+    filters="cleancss",
+    output="previewer/pdfjs.css",
+    weight=20
+)
+
+pdftkcss = Bundle(
     "css/previewer/pdf_viewer.css",
     filters="cleancss",
-    output="previewer/pdf.css",
+    output="previewer/pdftk.css",
     weight=20
 )
