@@ -19,7 +19,7 @@
 
 """Previewer bundles."""
 
-from invenio.ext.assets import Bundle
+from invenio.ext.assets import Bundle, CleanCSSFilter
 
 
 pdfjs = Bundle(
@@ -46,7 +46,7 @@ pdftk = Bundle(
 pdfjscss = Bundle(
     "css/previewer/pdfjs_shim.css",
     "vendors/pdfjs-build/generic/web/viewer.css",
-    filters="cleancss",
+    filters=CleanCSSFilter(),
     output="previewer/pdfjs.css",
     weight=20
 )
