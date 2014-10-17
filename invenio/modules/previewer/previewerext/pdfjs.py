@@ -17,16 +17,19 @@
 ## along with Invenio; if not, write to the Free Software Foundation, Inc.,
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
+"""PDF previewer based on pdf.js."""
+
 from flask import render_template, request
 
 
 def can_preview(f):
-    """Returns True for PDFs, False for others"""
-    if f.superformat == '.pdf':
+    """Check if file can be previewed."""
+    if f.superformat.lower() == '.pdf':
         return True
     return False
 
 
 def preview(f):
+    """Preview file."""
     return render_template("previewer/pdfjs.html", f=f,
                            embed=request.args.get('embed', type=bool))
