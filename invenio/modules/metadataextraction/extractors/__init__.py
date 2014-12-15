@@ -19,12 +19,14 @@
 
 from crossref_extractor import CrossRefExtractor
 from crossref_journal_extractor import CrossrefJournalExtractor
+from datacite_extractor import DataciteExtractor
 from doi_extractor import DoiExtractor, DoiExtractorText
 from xmp_extractor import XmpExtractor
 
 __all__ = (
     'CrossRefExtractor',
     'CrossrefJournalExtractor',
+    'DataciteExtractor',
     'DoiExtractor',
     'DoiExtractorText',
     'XmpExtractor'

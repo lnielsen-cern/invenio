@@ -29,10 +29,11 @@ class XmpExtractor(object):
 
     def __init__(self, full_file_path):
         """Initialization."""
+        self.path = full_file_path
         try:
             # boolean to note if xmp is None
             self.is_xmp_none = False
-            self.xmp_file = XMPFiles(file_path=full_file_path)
+            self.xmp_file = XMPFiles(file_path=self.path)
             if not self.xmp_file:
                 # xmp will be None
                 self.is_xmp_none = True
@@ -224,10 +225,23 @@ class XmpExtractor(object):
 
     def _process_metadata(self):
         if 'dc_title' in self.metadata:
+            title_bag_of_words = ['.doc', '.docx', 'Print', 'Microsoft Word',
+                                  'Microsoft PowerPoint', '.dvi', '.ppt',
+                                  'untitled']
             dc_title = self.metadata['dc_title']
-            if (dc_title.endswith('.doc') or
-                    dc_title.endswith('.docx')):
-                del self.metadata['dc_title']
+            for w in title_bag_of_words:
+                if w in dc_title:
+                    del self.metadata['dc_title']
+                    break
+        if 'dc_creator' in self.metadata:
+            creator_bag_of_words = ['Owner', 'abc', 'mri', 'hp',
+                                    'Administrator', 'administrator']
+            creators = self.metadata['dc_creator']
+            for creator in creators:
+                for w in creator_bag_of_words:
+                    if w in creator:
+                        del self.metadata['dc_creator']
+                        break
 
     def get_xmp_metadata(self):
         self.parse_metadata()
@@ -269,13 +283,46 @@ class XmpExtractor(object):
                 xmp_metadata['xmp_language'] = self.metadata['dc_language']
             return xmp_metadata
 
+    def get_metadata(self):
+        metadata = self.get_xmp_metadata()
+        if 'xmp_doi' in metadata:
+            metadata['doi'] = metadata['xmp_doi']
+            del metadata['xmp_doi']
+        if 'xmp_title' in metadata:
+            metadata['title'] = metadata['xmp_title']
+            del metadata['xmp_title']
+        if 'dc_creator' in metadata:
+            metadata['author'] = metadata['dc_creator']
+            del metadata['dc_creator']
+        if 'dc_subject' in metadata:
+            metadata['subject'] = metadata['dc_subject']
+            del metadata['dc_subject']
+        return metadata
+
+    def validate_metadata(self, xmp_metadata):
+        from invenio.modules.metadataextraction.text_reader import TextReader
+        tr = TextReader(self.path)
+        text = tr.get_text()
+        if text:
+            if 'References' in text:
+                text = text[:text.find('References')]
+            xmp_validation = xmpv.XmpValidation(
+                text=text,
+                metadata=xmp_metadata,
+                threshold=0.8
+            )
+            return xmp_validation.validate()
+        else:
+            return False
+
     @classmethod
     def validate(cls, text_lines, xmp_metadata, threshold):
+        text = ' '.join(text_lines)
+        if 'References' in text:
+            text = text[:text.find('References')]
         xmp_validation = xmpv.XmpValidation(
-            lines_of_text=text_lines,
+            text=text,
             metadata=xmp_metadata,
             threshold=threshold
         )
-        if xmp_validation.validate() is True:
-            return True
-        return False
+        return xmp_validation.validate()

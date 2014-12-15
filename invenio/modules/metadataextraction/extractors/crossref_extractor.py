@@ -31,8 +31,8 @@ class CrossRefExtractor(object):
     def __init__(self, doi):
         """Initialization."""
         self.doi = doi
-        self.json_data = {}
-        self.metadata = {}
+        self.json_data = dict()
+        self.metadata = dict()
         # query crossref site
         self.__connect_to_crossref_and_read()
 
@@ -46,12 +46,12 @@ class CrossRefExtractor(object):
             connection = urllib.urlopen(query)
             response = connection.read()
             if response == 'Resource not found.':
-                self.json_data = {}
+                self.json_data = dict()
             else:
                 self.json_data = json.loads(response)
         except Exception:
             print("crossref error when connecting/reading")
-            self.json_data = {}
+            self.json_data = dict()
         finally:
             if connection:
                 connection.close()
@@ -286,7 +286,7 @@ class CrossRefExtractor(object):
 
     def get_crossref_metadata(self):
         self.parse_metadata()
-        metadata_retrieved = {}
+        metadata_retrieved = dict()
         for key in self.metadata:
             new_key = key[key.find('_')+1:len(key)]
             metadata_retrieved[new_key] = self.metadata[key]

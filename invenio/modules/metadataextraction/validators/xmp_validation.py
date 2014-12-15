@@ -18,6 +18,95 @@
 ## 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
 import string
+from nltk.corpus import stopwords
+from langid import classify
+from ..utils import utils as languitils
+
+
+class XmpValidationText(object):
+
+    exclude = [punctuation.decode('utf8')
+               for punctuation in set(string.punctuation)
+               if not isinstance(punctuation, unicode)]
+
+    def __init__(self, text, metadata, threshold):
+        if len(text) >= 5000:
+            self.text = text[:5000]
+        else:
+            self.text = text[:len(text)]
+        self.metadata = metadata
+        if (threshold < 0) or (threshold > 1):
+            self.threshold = 0.8
+        else:
+            self.threshold = threshold
+        self.lang_stopwords = None
+        self.terms_of_text = []
+        self.terms_to_search = []
+        self.score = 0
+        self.__get_text_to_search()
+        self.__get_title_and_authors()
+
+    def __get_text_to_search(self):
+        # transform to unicode if necessary
+        if not isinstance(self.text, unicode):
+            self.text = self.text.decode('utf8')
+        # lower all letters
+        self.text = self.text.lower()
+        # get the languages codes dictionary
+        lang_code_d = languitils.language_code_dictionary
+        # try to detect language
+        (language, confidence) = classify(self.text)
+        if confidence >= 0.9:
+            self.lang_stopwords = set(stopwords.words(lang_code_d[language]))
+        words = self.text.split()
+        if self.lang_stopwords:
+            self.terms_of_text = [w for w in words
+                                  if w not in self.lang_stopwords]
+        self.terms_of_text = words
+
+    def __get_title_and_authors(self):
+        if self.metadata:
+            author_field = None
+            if 'xmp_creator' in self.metadata:
+                author_field = 'xmp_creator'
+            if author_field:
+                authors = self.metadata[author_field]
+                if authors and len(authors) > 0:
+                    for author in authors:
+                        if not isinstance(author, unicode):
+                            author = author.decode('utf8')
+                        author = author.lower()
+                        self.terms_to_search.append(author)
+            title_field = None
+            if 'xmp_title' in self.metadata:
+                title_field = 'xmp_title'
+            if title_field:
+                title = self.metadata[title_field]
+                if not isinstance(title, unicode):
+                    title = title.decode('utf8')
+                title = title.lower()
+                title_words = title.split()
+                if self.lang_stopwords:
+                    for tw in title_words:
+                        if tw not in self.lang_stopwords:
+                            self.terms_to_search.append(tw)
+                else:
+                    self.terms_to_search += title_words
+
+    def validate(self):
+        if not self.terms_to_search:
+            return False
+        else:
+            for st in self.terms_to_search:
+                for tt in self.terms_of_text:
+                    if st in tt:
+                        self.score += 1
+                        break
+            self.score = float(self.score)/float(len(self.terms_to_search))
+            if self.score >= self.threshold:
+                return True
+            else:
+                return False
 
 
 class XmpValidation(object):

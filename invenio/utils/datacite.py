@@ -651,3 +651,8 @@ class DataciteMetadata(object):
         if 'titles' in self.xml:
             return self.xml['rights']
         return None
+
+    def get_subjects(self):
+        if 'subjects' in self.xml:
+            return self.xml['subjects']['subject']
+        return None

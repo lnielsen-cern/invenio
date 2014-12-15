@@ -56,7 +56,6 @@ class CrossrefDoiValidationText(object):
         lang_code_d = languitils.language_code_dictionary
         # try to detect language
         (language, confidence) = classify(self.text)
-        print('Language: {} with Confidence: {}'.format(language, confidence))
         if confidence >= 0.9:
             self.lang_stopwords = set(stopwords.words(lang_code_d[language]))
         words = self.text.split()

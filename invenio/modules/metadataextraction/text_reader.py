@@ -41,3 +41,11 @@ class TextReader(object):
     def get_lines(self):
         if self.can_open_file() is True:
             return self.text_lines
+        return []
+
+    def get_text(self):
+        lines = self.get_lines()
+        if lines:
+            text = ' '.join(lines)
+            return text
+        return None
