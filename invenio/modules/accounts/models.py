@@ -29,6 +29,7 @@ from sqlalchemy_utils.types.choice import ChoiceType
 from invenio.ext.sqlalchemy import db
 
 from .errors import AccountSecurityError, IntegrityUsergroupError
+from .signals import profile_updated
 
 # Create your models here.
 
@@ -115,6 +116,28 @@ class User(db.Model):
     def is_active(self):
         """Return True if use is active."""
         return True
+
+    def update_profile(self, data):
+        """Update user profile.
+
+        Sends signal to allow other modules to subscribe to changes.
+        """
+        fields = ['nickname', 'email', 'family_name', 'given_names']
+
+        changed_attrs = []
+        for field in fields:
+            if field in data and getattr(self, field) != data[field]:
+                setattr(self, field, data[field])
+                changed_attrs.append(field)
+
+        if 'email' in changed_attrs:
+            self.note = '2'  # email activation required.
+
+        db.session.commit()
+        current_user.reload()
+        profile_updated.send(
+            sender=self.id, user=self, changed_attrs=changed_attrs
+        )
 
 
 def get_groups_user_not_joined(id_user, group_name=None):

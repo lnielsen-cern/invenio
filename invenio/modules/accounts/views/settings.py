@@ -32,7 +32,7 @@ from invenio.ext.sslify import ssl_required
 from invenio.ext.login import reset_password
 
 
-from ..forms import ChangePasswordForm, LostPasswordForm
+from ..forms import ChangePasswordForm, LostPasswordForm, ProfileForm
 from ..models import User
 
 
@@ -72,15 +72,25 @@ def index():
 @register_breadcrumb(blueprint, 'breadcrumbs.settings.profile', _('Profile'))
 def profile():
     """Change password form for authenticated users."""
-    form = ChangePasswordForm(request.form)
-    if form.validate_on_submit():
-        u = User.query.filter_by(id=current_user.get_id()).first()
-        u.password = form.data['password']
-        flash("Password changed.", category="success")
+    u = User.query.filter_by(id=current_user.get_id()).first()
+
+    profile_form = ProfileForm(request.form, obj=u, prefix="profile")
+    password_form = ChangePasswordForm(request.form, prefix="password")
+
+    form = request.form.get('submit', None)
+    if form == 'password':
+        if password_form.validate_on_submit():
+            u.password = password_form.data['password']
+            flash("Password changed.", category="success")
+    elif form == 'profile':
+        if profile_form.validate_on_submit():
+            u.update_profile(profile_form.data)
+            flash("Profile updated.", category="success")
 
     return render_template(
         "accounts/settings/profile.html",
-        form=form,
+        password_form=password_form,
+        profile_form=profile_form,
     )
 
 

@@ -507,7 +507,9 @@ def registerUser(req, email, passw, nickname, register_without_nickname=False,
     user = User(nickname=nickname,
                 email=email,
                 password=passw,
-                note=activated)
+                note=activated,
+                last_login=datetime.datetime.now())
+
     try:
         db.session.add(user)
         db.session.commit()
