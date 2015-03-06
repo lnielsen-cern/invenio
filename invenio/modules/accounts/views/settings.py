@@ -91,6 +91,7 @@ def profile():
         "accounts/settings/profile.html",
         password_form=password_form,
         profile_form=profile_form,
+        user=u,
     )
 
 

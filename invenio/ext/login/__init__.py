@@ -26,6 +26,7 @@ from datetime import datetime
 from flask import flash, g, redirect, request, session, url_for
 from flask.ext.login import (
     LoginManager,
+    current_app,
     current_user,
     login_user as flask_login_user,
     logout_user,
@@ -111,13 +112,16 @@ def authenticate(nickname_or_email=None, password=None,
 
     where = [db.or_(User.nickname == nickname_or_email,
                     User.email == nickname_or_email)]
-    if login_method == 'Local' and password is not None:
-        where.append(User.password == password)
+
     try:
         user = User.query.filter(*where).one()
+        if login_method == 'Local' and password is not None:
+            if not user.verify_password(password, migrate=True):
+                return False
     except NoResultFound:
         return None
     except Exception:
+        current_app.logger.exception("Problem checking password.")
         return False
 
     if user.settings['login_method'] != login_method:
@@ -127,8 +131,7 @@ def authenticate(nickname_or_email=None, password=None,
 
     if user.note == '2':  # account is not confirmed
         logout_user()
-        flash(_("You have not yet confirmed the email address for the \
-            '%(login_method)s' authentication method.",
+        flash(_("You have not yet confirmed the email address.",
               login_method=login_method), 'warning')
     if remember:
         session.permanent = True

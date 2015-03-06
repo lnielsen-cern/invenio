@@ -27,11 +27,12 @@ from sqlalchemy_utils.types.choice import ChoiceType
 
 # Invenio import
 from invenio.ext.sqlalchemy import db
+from invenio.ext.passlib import password_context
+from invenio.ext.passlib.hash import invenio_aes_encrypted_email
 
 from .errors import AccountSecurityError, IntegrityUsergroupError
 from .signals import profile_updated
-
-# Create your models here.
+from .helpers import send_account_activation_email
 
 
 def get_default_user_preferences():
@@ -61,11 +62,14 @@ class User(db.Model):
                    autoincrement=True)
     email = db.Column(db.String(255), nullable=False, server_default='',
                       index=True)
-    _password = db.Column(db.LargeBinary, name="password",
-                          nullable=False)
+    _password = db.Column(db.String(255), name="password",
+                          nullable=True)
+    password_salt = db.Column(db.String(255))
+    password_scheme = db.Column(db.String(50), nullable=False, index=True)
+
     note = db.Column(db.String(255), nullable=True)
-    given_names = db.Column(db.String(255), nullable=True)
-    family_name = db.Column(db.String(255), nullable=True)
+    given_names = db.Column(db.String(255), nullable=False, server_default='')
+    family_name = db.Column(db.String(255), nullable=False, server_default='')
     settings = db.Column(db.MutableDict.as_mutable(db.MarshalBinary(
         default_value=get_default_user_preferences, force_type=dict)),
         nullable=True)
@@ -73,10 +77,6 @@ class User(db.Model):
                          index=True)
     last_login = db.Column(db.DateTime, nullable=False,
                            server_default='1900-01-01 00:00:00')
-
-    # TODO re_invalid_nickname = re.compile(""".*[,'@]+.*""")
-
-    _password_comparator = db.PasswordComparator(_password)
 
     @hybrid_property
     def password(self):
@@ -86,12 +86,69 @@ class User(db.Model):
     @password.setter
     def password(self, password):
         """Set the password."""
-        self._password = self._password_comparator.hash(password)
+        if password is None:
+            # Unusable password.
+            self._password = None
+            self.password_scheme = ''
+        else:
+            self._password = password_context.encrypt(password)
+            self.password_scheme = password_context.default_scheme()
 
-    @password.comparator
-    def password(self):
-        """Compare password."""
-        return self._password_comparator
+        # Invenio legacy salt is stored in password_salt, and every new
+        # password set will be migrated to new hash not relying on
+        # password_salt, thus is force to empty value.
+        self.password_salt = ""
+
+    def verify_password(self, password, migrate=False):
+        """Verify if password matches the stored password hash."""
+        if self.password is None or password is None:
+            return False
+
+        # Invenio 1.x legacy needs externally store password salt to compute
+        # hash.
+        scheme_ctx = {} if \
+            self.password_scheme != invenio_aes_encrypted_email.name else \
+            {'user': self.password_salt}
+
+        # Verify password
+        if not password_context.verify(password, self.password,
+                                       scheme=self.password_scheme,
+                                       **scheme_ctx):
+                return False
+
+        # Migrate hash if needed.
+        if migrate and password_context.needs_update(self.password):
+            self.password = password
+            db.session.commit()
+
+        return True
+
+    def verify_email(self):
+        """Verify email address."""
+        self.note = 2
+        send_account_activation_email(self)
+
+    def update_profile(self, data):
+        """Update user profile.
+
+        Sends signal to allow other modules to subscribe to changes.
+        """
+        fields = ['nickname', 'email', 'family_name', 'given_names']
+
+        changed_attrs = {}
+        for field in fields:
+            if field in data and getattr(self, field) != data[field]:
+                changed_attrs[field] = getattr(self, field)
+                setattr(self, field, data[field])
+
+        if 'email' in changed_attrs:
+            self.verify_email()
+
+        db.session.commit()
+        current_user.reload()
+        profile_updated.send(
+            sender=self.id, user=self, changed_attrs=changed_attrs
+        )
 
     @property
     def guest(self):
@@ -105,6 +162,10 @@ class User(db.Model):
         """Return the id."""
         return self.id
 
+    def is_confirmed(self):
+        """Return true if accounts has been confirmed."""
+        return self.note == 1
+
     def is_guest(self):
         """Return if the user is a guest."""
         return self.guest
@@ -116,28 +177,6 @@ class User(db.Model):
     def is_active(self):
         """Return True if use is active."""
         return True
-
-    def update_profile(self, data):
-        """Update user profile.
-
-        Sends signal to allow other modules to subscribe to changes.
-        """
-        fields = ['nickname', 'email', 'family_name', 'given_names']
-
-        changed_attrs = []
-        for field in fields:
-            if field in data and getattr(self, field) != data[field]:
-                setattr(self, field, data[field])
-                changed_attrs.append(field)
-
-        if 'email' in changed_attrs:
-            self.note = '2'  # email activation required.
-
-        db.session.commit()
-        current_user.reload()
-        profile_updated.send(
-            sender=self.id, user=self, changed_attrs=changed_attrs
-        )
 
 
 def get_groups_user_not_joined(id_user, group_name=None):
