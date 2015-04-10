@@ -95,6 +95,7 @@ install_requires = [
     # Development version is used, will switch to >=2.0 once released.
     "Flask-SQLAlchemy>=2.0",
     "Flask-WTF>=0.10.2",
+    "cryptography>=0.6",
     "fs>=0.4",
     "intbitset>=2.0",
     "invenio-client>=0.1.0",
