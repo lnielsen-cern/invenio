@@ -22,7 +22,6 @@
 require(
 
   [
-    'js/communities/teams',
     'ckeditor-jquery'
   ],
 
