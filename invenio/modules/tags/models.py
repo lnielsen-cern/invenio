@@ -27,7 +27,8 @@ from sqlalchemy.ext.associationproxy import association_proxy
 
 # Related models
 from invenio.modules.records.models import Record as Bibrec
-from invenio.modules.accounts.models import User, Usergroup
+from invenio.modules.accounts.models import User
+from invenio.modules.groups.models import Group
 
 # Functions
 from invenio.base.globals import cfg
@@ -145,7 +146,7 @@ class WtgTAG(db.Model, Serializable):
     # equal to 0 for private tags
     id_usergroup = db.Column(
         db.Integer(15, unsigned=True),
-        db.ForeignKey(Usergroup.id),
+        db.ForeignKey(Group.id),
         server_default='0')
 
     # Group access rights
@@ -174,7 +175,7 @@ class WtgTAG(db.Model, Serializable):
                                                     lazy='dynamic'))
 
     usergroup = db.relationship(
-        Usergroup,
+        Group,
         backref=db.backref('tags', cascade='all'))
 
     # association proxy of "user_keywords" collection

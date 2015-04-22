@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Invenio.
-# Copyright (C) 2014 CERN.
+# Copyright (C) 2015 CERN.
 #
 # Invenio is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as
@@ -17,14 +17,11 @@
 # along with Invenio; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-"""Exceptions for Invenio Accounts module."""
+"""Groups module signals."""
 
+from blinker import Namespace
+_signals = Namespace()
 
-class AccountSecurityError(Exception):
+group_created = _signals.signal('group_created')
 
-    """A security error for Accounts module."""
-
-
-class IntegrityUsergroupError(Exception):
-
-    """A integrity error for Usergroup."""
+group_deleted = _signals.signal('group_deleted')

@@ -26,7 +26,8 @@ from invenio.ext.sqlalchemy import db
 
 # Create your models here.
 
-from invenio.modules.accounts.models import User, Usergroup
+from invenio.modules.accounts.models import User
+from invenio.modules.groups.models import Group
 from invenio.modules.collections.models import Collection
 
 class BskBASKET(db.Model):
@@ -146,7 +147,7 @@ class UsergroupBskBASKET(db.Model):
     """Represents a UsergroupBskBASKET record."""
     __tablename__ = 'usergroup_bskBASKET'
     id_usergroup = db.Column(db.Integer(15, unsigned=True),
-                db.ForeignKey(Usergroup.id), nullable=False,
+                db.ForeignKey(Group.id), nullable=False,
                 server_default='0', primary_key=True)
     id_bskBASKET = db.Column(db.Integer(15, unsigned=True),
                 db.ForeignKey(BskBASKET.id), nullable=False,
@@ -156,7 +157,7 @@ class UsergroupBskBASKET(db.Model):
     date_shared = db.Column(db.DateTime, nullable=False,
                 server_default='1900-01-01 00:00:00')
     share_level = db.Column(db.Char(2), nullable=False, server_default='')
-    usergroup = db.relationship(Usergroup, backref='usergroup_baskets')
+    usergroup = db.relationship(Group, backref='usergroup_baskets')
     usergroup_basket = db.relationship(BskBASKET, backref='usergroups')
 
 

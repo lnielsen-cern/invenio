@@ -38,3 +38,13 @@ class GroupValidationError(Exception):
                 self.message, self.code, self.error_list
             )
         )
+
+
+class AccountSecurityError(Exception):
+
+    """A security error for Accounts module."""
+
+
+class GroupAlreadyExists(Exception):
+
+    """A integrity error for Usergroup."""

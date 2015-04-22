@@ -19,31 +19,28 @@
 
 """Group Forms."""
 
-from invenio.base.i18n import _
-from invenio.utils.forms import InvenioBaseForm, InvenioForm as Form
 
-from wtforms import StringField, TextAreaField, validators
+from __future__ import absolute_import, print_function, unicode_literals
 
 from wtforms_alchemy import model_form_factory
+
+from invenio.base.i18n import _
+from invenio.utils.forms import InvenioBaseForm
+
+from .models import Group
+
 
 ModelForm = model_form_factory(InvenioBaseForm)
 
 
-class UsergroupForm(Form):
+class GroupForm(ModelForm):
 
-    """Create new Usergroup."""
+    """Create new group."""
 
-    name = StringField(
-        description='Required. A name of this group.',
-        validators=[validators.DataRequired()]
-    )
-
-    description = TextAreaField(
-        description=_(
-            'Optional. A short description of the group'
-            ' which will be displayed on the index'
-            ' page of the group.'),
-    )
+    class Meta:
+            model = Group
+            include = ['name', 'description', 'subscription_policy',
+                       'privacy_policy', ]
 
 
 class UsergroupNewMemberForm(InvenioBaseForm):

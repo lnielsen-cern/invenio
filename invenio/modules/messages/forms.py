@@ -24,7 +24,8 @@ from string import strip
 from invenio.base.globals import cfg
 from invenio.base.i18n import _
 from invenio.ext.sqlalchemy import db
-from invenio.modules.accounts.models import User, Usergroup
+from invenio.modules.accounts.models import User
+from invenio.modules.groups.models import Group
 from invenio.modules.messages.config import CFG_WEBMESSAGE_MAX_SIZE_OF_MESSAGE
 from invenio.utils.forms import DateTimePickerWidget, FilterForm, \
     FilterStringField, InvenioBaseForm
@@ -59,8 +60,7 @@ def validate_group_names(form, field):
     """Find not valid usergroups."""
     if field.data:
         test = set(msg_split_addr(field.data))
-        comp = set([u for u, in db.session.query(Usergroup.name).
-                    filter(Usergroup.name.in_(test)).all()])
+        comp = set([u for u, in Group.query_by_names(test).all()])
         diff = test.difference(comp)
         if len(diff) > 0:
             raise validators.ValidationError(

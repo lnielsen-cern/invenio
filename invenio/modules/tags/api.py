@@ -23,7 +23,7 @@
 from flask_login import current_user
 from sqlalchemy.exc import DBAPIError
 from invenio.ext.sqlalchemy import db
-from invenio.modules.accounts.models import Usergroup
+from invenio.modules.groups.models import Group
 import invenio.modules.tags.errors as tags_errors
 from .models import WtgTAG, WtgTAGRecord
 
@@ -151,8 +151,7 @@ def update_tag_of_user(uid, tag_name, dictionary_to_update):
     show_in_description = True
     # get the values that user uploaded
     if 'groupname' in dictionary_to_update:
-        usergroup = Usergroup.query.\
-            filter(Usergroup.name == dictionary_to_update['groupname'])
+        usergroup = Group.get_by_name(dictionary_to_update['groupname'])
         usergroup_id = usergroup.id
     if 'rights' in dictionary_to_update:
         group_rights = dictionary_to_update['rights']

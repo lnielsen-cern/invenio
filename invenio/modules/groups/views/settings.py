@@ -36,8 +36,7 @@ from invenio.ext.principal import permission_required
 from invenio.ext.sqlalchemy import db
 from invenio.modules.accounts.errors import AccountSecurityError, \
     IntegrityUsergroupError
-from invenio.modules.accounts.models import User, UserUsergroup, Usergroup, \
-    get_groups_user_not_joined
+from invenio.modules.groups.models import Group, Membership, MembershipState
 
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
@@ -62,7 +61,7 @@ default_breadcrumb_root(blueprint, '.settings.groups')
 @register_menu(
     blueprint, 'settings.groups',
     _('%(icon)s My Groups', icon='<i class="fa fa-users fa-fw"></i>'),
-    order=13,  # FIXME which order to choose
+    order=13,
     active_when=lambda: request.endpoint.startswith("groups_settings.")
 )
 @register_breadcrumb(blueprint, '.', _('Groups'))
@@ -74,28 +73,22 @@ default_breadcrumb_root(blueprint, '.settings.groups')
     'p': (unicode, '')
 })
 def index(page, per_page, p):
-    """List all user groups."""
-    # FIXME can check be done differently?
-    if page <= 0:
-        page = 1
-    if per_page <= 0:
-        per_page = 5
+    """List all memberships."""
+    memberships = Membership.query_by_user(
+        current_user,
+        eager=['group'],
+    ).paginate(page, per_page=per_page)
 
-    uid = current_user.get_id()
-    ugs = GroupsAPI.query_list_usergroups(
-        uid, p).paginate(page, per_page, error_out=False)
-    pending_ugs = GroupsAPI.query_pending_usergroups(uid).all()
-    members = dict(
-        (
-            ug.id, filter(lambda uug: uug.user_status != "PENDING", ug.users)
-        ) for ug in ugs.items
-    )
+    invitations = Membership.query_by_user(
+        current_user,
+        eager=['group'],
+        state=MembershipState.PENDING_USER
+    ).all()
 
     return render_template(
         'groups/settings.html',
-        ugs=ugs,
-        pending_ugs=pending_ugs,
-        members=members,
+        invitations=invitations,
+        memberships=memberships,
         page=page,
         per_page=per_page,
         p=p
@@ -110,27 +103,12 @@ def new():
     """Create new user group."""
     form = UsergroupForm(request.form)
 
-    if request.method == 'POST' and form.validate():
-        ug = Usergroup()
-        id_user = current_user.get_id()
-        form.populate_obj(ug)
-        try:
-            ug = GroupsAPI.create(uid=id_user, group=ug)
-        except (IntegrityError, AccountSecurityError,
-                IntegrityUsergroupError, IntegrityError) as e:
-            db.session.rollback()
-            flash(str(e), 'error')
-            # reload form with old values
-            return render_template(
-                "groups/new.html",
-                form=form,
-            )
-        # redirect to see the group's list
-        flash(_('Group "%(name)s" successfully created',
-                name=ug.name), 'success')
+    if form.validate_on_submit():
+        group = Group.create(form.data, owners=[current_user])
+
+        flash(_('Group "%(name)s" created', name=group.name), 'success')
         return redirect(url_for(".index"))
 
-    # open the form to create new group
     return render_template(
         "groups/new.html",
         form=form,

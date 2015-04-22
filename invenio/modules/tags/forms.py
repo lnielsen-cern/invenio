@@ -24,7 +24,7 @@ from flask_login import current_user
 from invenio.base.globals import cfg
 from invenio.base.i18n import _
 from invenio.ext.sqlalchemy import db
-from invenio.modules.accounts.models import UserUsergroup, Usergroup
+from invenio.modules.groups.models import Group, Membership
 from invenio.modules.records.models import Record as Bibrec
 from invenio.utils.forms import InvenioBaseForm
 
@@ -242,17 +242,10 @@ class GetGroupOptions(object):
 
     def __iter__(self):
         """Iter function."""
-        id_user = current_user.get_id()
-
         options = [('0', _('Private'))]
 
-        options += db.session.query(Usergroup.id, Usergroup.name)\
-            .join(UserUsergroup)\
-            .filter(UserUsergroup.id_user == id_user)\
-            .all()
-
-        for (gid, name) in options:
-            yield (str(gid), name)
+        for m in Membership.query_by_user(current_user, eager=['group']):
+            yield (str(m.group.id, m.group.name))
 
 
 class EditTagForm(InvenioBaseForm):
